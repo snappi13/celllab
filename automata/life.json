@@ -1,1 +1,9 @@
-{}
+{
+  "name": "Game of Life",
+  "type": "2D",
+  "states": 2,
+  "rules": {
+    "survive": [2, 3],
+    "birth": [3]
+  }
+}

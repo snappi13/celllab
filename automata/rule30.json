@@ -1,1 +1,8 @@
-{}
+{
+  "name": "Rule 30",
+  "type": "1D",
+  "states": 2,
+  "rules": {
+    "rule_number": 30
+  }
+}
