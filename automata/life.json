@@ -1,0 +1,12 @@
+{
+  "name": "Game of Life",
+  "dimensions": 2,
+  "states": ["DEAD", "ALIVE"],
+  "default_state": "DEAD",
+  "neighborhood": "moore",
+  "boundary": "wrap",
+  "rules": [
+    {"from": "ALIVE", "to": "DEAD",  "if": {"count": "ALIVE", "op": "not in", "value": [2, 3]}},
+    {"from": "DEAD",  "to": "ALIVE", "if": {"count": "ALIVE", "op": "==",     "value": 3}}
+  ]
+}
