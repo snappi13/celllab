@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <title>CelLab</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    canvas { border: 1px solid #888; image-rendering: pixelated; }
+    #controls { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>CelLab</h1>
+  <div id="controls">
+    <select id="automaton"></select>
+    Generații: <input id="generations" type="number" value="50" min="1" max="300">
+      <button id="simulate">Simulează</button>
+    <span id="status"></span>
+  </div>
+  <canvas id="canvas" width="600" height="600"></canvas>
+
+  <script>
+    const select = document.getElementById("automaton");
+    const status = document.getElementById("status");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const COLORS = ["#ffffff", "#000000", "#e63946", "#457b9d"];
+    let timer = null;
+
+    async function loadAutomata() {
+      const res = await fetch("/automata");
+      const names = await res.json();
+      for (const name of names) {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+      }
+    }
+
+    function drawCells(row, y, cell) {
+      for (let x = 0; x < row.length; x++) {
+        ctx.fillStyle = COLORS[row[x]];
+        ctx.fillRect(x * cell, y * cell, cell, cell);
+      }
+    }
+
+    function animate(data) {
+      const gens = data.generations;
+      let i = 0;
+      clearInterval(timer);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (data.dimensions === 1) {
+        const cell = Math.min(canvas.width / gens[0].length, canvas.height / gens.length);
+        timer = setInterval(() => {
+          drawCells(gens[i], i, cell);
+          status.textContent = `Generația ${i}`;
+          i++;
+          if (i >= gens.length) clearInterval(timer);
+        }, 50);
+      } else {
+        const cell = Math.min(canvas.width / gens[0][0].length, canvas.height / gens[0].length);
+        timer = setInterval(() => {
+          gens[i].forEach((row, y) => drawCells(row, y, cell));
+          status.textContent = `Generația ${i}`;
+          i++;
+          if (i >= gens.length) clearInterval(timer);
+        }, 100);
+      }
+    }
+
+    document.getElementById("simulate").addEventListener("click", async () => {
+      status.textContent = "Se calculează...";
+      const res = await fetch("/simulate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          automaton: select.value,
+          generations: Number(document.getElementById("generations").value),
+        }),
+      });
+      if (!res.ok) {
+        status.textContent = "Eroare: " + (await res.text());
+        return;
+      }
+      animate(await res.json());
+    });
+
+    loadAutomata();
+  </script>
+</body>
+</html>
