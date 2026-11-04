@@ -1,1 +1,7 @@
-{}
+{
+  "name": "Rule 30",
+  "dimensions": 1,
+  "states": ["OFF", "ON"],
+  "default_state": "OFF",
+  "special": {"type": "elementary", "rule": 30}
+}

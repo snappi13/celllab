@@ -46,8 +46,15 @@ class Automaton:
 
     @classmethod
     def load(cls, path):
+        path = Path(path)
+        if not path.exists():
+            raise FileNotFoundError(f"Fișierul nu a fost găsit: {path}")
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
+        required_keys = {"name", "dimensions", "states", "default_state"}
+        missing = required_keys - data.keys()
+        if missing:
+            raise ValueError(f"JSON invalid. Lipsesc cheile: {missing}")
         rules = [
             Rule(r["from"], r["to"], r.get("if"))
             for r in data.get("rules", [])
