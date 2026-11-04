@@ -14,7 +14,11 @@
   <div id="controls">
     <select id="automaton"></select>
     Generații: <input id="generations" type="number" value="50" min="1" max="300">
+    Viteză:
+    <input id="speed" type="range" min="20" max="1000" value="300" step="20">
+    <span id="speedValue">300 ms</span>
       <button id="simulate">Simulează</button>
+      <button id="stop">Stop</button>
     <span id="status"></span>
   </div>
   <canvas id="canvas" width="600" height="600"></canvas>
@@ -24,8 +28,14 @@
     const status = document.getElementById("status");
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
+    const speed = document.getElementById("speed");
+    const speedValue = document.getElementById("speedValue");
     const COLORS = ["#ffffff", "#000000", "#e63946", "#457b9d"];
     let timer = null;
+
+    speed.addEventListener("input", () => {
+      speedValue.textContent = `${speed.value} ms`;
+    });
 
     async function loadAutomata() {
       const res = await fetch("/automata");
@@ -45,32 +55,46 @@
       }
     }
 
+    function stopAnimation(message) {
+      clearTimeout(timer);
+      timer = null;
+      if (message) status.textContent = message;
+    }
+
     function animate(data) {
       const gens = data.generations;
       let i = 0;
-      clearInterval(timer);
+      stopAnimation();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const tick = (drawFrame) => {
+        drawFrame(i);
+        status.textContent = `Generația ${i} / ${gens.length - 1}`;
+        i++;
+        if (i < gens.length) {
+          timer = setTimeout(() => tick(drawFrame), Number(speed.value));
+        } else {
+          timer = null;
+        }
+      };
 
       if (data.dimensions === 1) {
         const cell = Math.min(canvas.width / gens[0].length, canvas.height / gens.length);
-        timer = setInterval(() => {
-          drawCells(gens[i], i, cell);
-          status.textContent = `Generația ${i}`;
-          i++;
-          if (i >= gens.length) clearInterval(timer);
-        }, 50);
+        tick((k) => drawCells(gens[k], k, cell));
       } else {
         const cell = Math.min(canvas.width / gens[0][0].length, canvas.height / gens[0].length);
-        timer = setInterval(() => {
-          gens[i].forEach((row, y) => drawCells(row, y, cell));
-          status.textContent = `Generația ${i}`;
-          i++;
-          if (i >= gens.length) clearInterval(timer);
-        }, 100);
+        tick((k) => gens[k].forEach((row, y) => drawCells(row, y, cell)));
       }
     }
 
+    document.getElementById("stop").addEventListener("click", () => {
+      if (timer !== null) {
+        stopAnimation(status.textContent + " (oprit)");
+      }
+    });
+
     document.getElementById("simulate").addEventListener("click", async () => {
+      stopAnimation();
       status.textContent = "Se calculează...";
       const res = await fetch("/simulate", {
         method: "POST",
